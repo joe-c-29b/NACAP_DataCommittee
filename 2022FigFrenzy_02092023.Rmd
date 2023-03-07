@@ -1,0 +1,270 @@
+---
+title: "NACAP 2022"
+author: "Joseph Christian"
+date: "February 9, 2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## library
+```{r} 
+
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(ggplot2))
+
+getwd()
+setwd('C:/Users/Christian/OneDrive/Desktop/work from home/NACAP')
+
+figs <- suppressMessages(read_csv('2022FigFrenz_clean.csv'))
+```
+
+
+## variable creation
+```{r}
+Figs <- figs %>% #complete set of the data
+  filter(Totals.State != 'Total')
+Figs
+
+popVpart <- Figs %>% #Data for State population vs. ACP participation
+  select(Totals.State, '2022.parts', population, `population/participants`)
+
+growth_sqrd <- Figs %>% #Data for State growth rate vs. ACP participant growth rate
+  select(Totals.State, `growth rate`, participant_growthRate) 
+
+popVacpGrowth <- Figs %>% #Data for population vs. ACP participant growth rate
+  select(Totals.State, population, participant_growthRate) 
+
+grVacpParts <- Figs %>% #Data for State growth rate vs. 2022 ACP participants
+  select(Totals.State, `growth rate`, `2022.parts`)
+
+densVprop <- Figs %>% #Data for State population density vs. the proportion of ACP participants to households(gives a look at dependents)
+  select(Totals.State, density, `2022.parts`, `2022.households`)
+
+densVacpGrowth <- Figs %>% #Data for State population density vs. ACP growth rate
+  select(Totals.State, density, participant_growthRate)
+
+parts2house <- Figs %>% #Data for average dependents per household
+  select(Totals.State, `2022.parts`, `2022.households`)
+
+```
+## State population vs. ACP participation
+```{r}
+popVpart #Data for State population vs. ACP participation
+popVpart2 <- popVpart %>% 
+  arrange(`2022.parts`) %>%
+  filter(Totals.State != 'Texas' &
+           Totals.State != 'Virginia' &
+           Totals.State != 'Florida' &
+           Totals.State != 'Washington DC' &
+           Totals.State != 'Mississippi') %>%
+  mutate(pop2 = population/100000)
+popVpart2
+
+popVpart_grf <- ggplot(popVpart2, aes(x=`2022.parts`, y=pop2)) +
+  geom_point() +
+  geom_smooth(method=lm, se=FALSE) +
+  ylab("2022 State Population (by 100,000)") + xlab("2022 Active ACP Participants")
+
+popVpart_grf
+cor.test(popVpart2$`2022.parts`, popVpart2$pop2)
+```
+## State growth rate vs. ACP growth rate
+```{r}
+growth_sqrd_clean <- growth_sqrd %>% #Data for State growth rate vs. ACP participant growth rate
+  rename("growth_rate" = "growth rate") %>%
+  drop_na() 
+
+#removing outliers
+growth_sqrd_clean2 <- growth_sqrd %>% #Data for State growth rate vs. ACP participant growth rate
+  rename("growth_rate" = "growth rate") %>%
+  filter(Totals.State != 'New Hampshire' &
+           Totals.State != 'Idaho' &
+           Totals.State != 'Pennsylvania' &
+           Totals.State != 'West Virginia') %>%  #filtering outliers
+  drop_na() 
+                            
+outliers_upper <- quantile(growth_sqrd_clean$growth_rate, 0.999, na.rm = TRUE)  #growth_rate outliers
+#outliers_upper <- quantile(growth_sqrd_clean$participant_growthRate, 0.997, na.rm = TRUE)  #participant_growthRate outliers
+outliers_upper
+
+outliers_lower <- quantile(growth_sqrd_clean$growth_rate, 0.001, na.rm = TRUE) #growth_rate outliers
+#outliers_lower <- quantile(growth_sqrd_clean$participant_growthRate, 0.003, na.rm = TRUE) #participant_growthRate outliers
+outliers_lower
+
+#outliers <- which(growth_sqrd_clean$participant_growthRate > outliers_upper | growth_sqrd_clean$participant_growthRate < outliers_lower) #participant_growthRate outliers
+outliers <- which(growth_sqrd_clean$growth_rate > outliers_upper | growth_sqrd_clean$growth_rate < outliers_lower)
+print(outliers)
+#growth_rate outliers
+growth_sqrd_clean[24, 1:3] 
+growth_sqrd_clean[26, 1:3]
+#participant_growthRate
+growth_sqrd_clean[3, 1:3] 
+growth_sqrd_clean[27, 1:3]
+
+###graph with outliers 
+growth_sqrd_grf <- ggplot(growth_sqrd_clean, aes(x=growth_rate, y=participant_growthRate)) +
+  geom_point() +
+  geom_smooth(method=lm, se=FALSE) +
+  ylab("ACP Participant Growth Rate") + xlab("State Population Growth Rate")
+
+
+###graph with outliers removed
+growth_sqrd_grf2 <- ggplot(growth_sqrd_clean2, aes(x=growth_rate, y=participant_growthRate)) +
+  geom_point() +
+  geom_smooth(method=lm, se=FALSE) +
+  ylab("ACP Participant Growth Rate") + xlab("State Population Growth Rate")
+
+##
+growth_sqrd_grf
+growth_sqrd_grf2
+cor.test(growth_sqrd_clean$growth_rate, growth_sqrd_clean$participant_growthRate) #with outliers
+```
+## State population vs. ACP growth rate
+```{r}
+popVacpGrowth_clean <- popVacpGrowth %>%
+  drop_na()#Data for population vs. ACP participant growth rate
+
+##removing outliers
+popVacpGrowth_clean2 <- popVacpGrowth %>%
+  filter(Totals.State != 'New Hampshire' &
+           Totals.State != 'Pennsylvania') %>%  #filtering outliers)
+  drop_na()#Data for population vs. ACP participant growth rate
+
+
+popVacpGrowth_grf <- ggplot(popVacpGrowth_clean, aes(x=population, y=participant_growthRate)) +
+  geom_point() +
+  geom_smooth(method=glm, se=FALSE) +
+  ylab("ACP Participant Growth Rate") + xlab("State Population")
+
+##without outliers
+popVacpGrowth_grf2 <- ggplot(popVacpGrowth_clean2, aes(x=population, y=participant_growthRate)) +
+  geom_point() +
+  geom_smooth(method=glm, se=FALSE) +
+  ylab("ACP Participant Growth Rate") + xlab("State Population")
+
+###graph without outliers
+popVacpGrowth_grf2
+###graph with outliers
+popVacpGrowth_grf
+
+cor.test(popVacpGrowth_clean$population, popVacpGrowth_clean$participant_growthRate)
+cor.test(popVacpGrowth_clean2$population, popVacpGrowth_clean2$participant_growthRate)
+```
+## State growth rate vs. ACP participation
+```{r}
+grVacpParts_clean <- grVacpParts %>%   #Data for State growth rate vs. 2022 ACP participants
+  rename("growth_rate" = "growth rate") %>%
+  drop_na()
+
+##removing outliers
+grVacpParts_clean2 <- grVacpParts %>%   #Data for State growth rate vs. 2022 ACP participants
+  rename("growth_rate" = "growth rate") %>%
+  filter(Totals.State != 'Idaho' &
+           Totals.State != 'West Virginia') %>%  #filtering outliers
+  drop_na()
+
+grVacpParts_grf <- ggplot(grVacpParts_clean, aes(x=growth_rate, y=`2022.parts`)) +
+  geom_point() +
+  geom_smooth(method=glm, se=FALSE) +
+  ylab("2022 ACP Participants") + xlab("State Population Growth Rate")
+
+
+grVacpParts_grf2 <- ggplot(grVacpParts_clean2, aes(x=growth_rate, y=`2022.parts`)) +
+  geom_point() +
+  geom_smooth(method=glm, se=FALSE) +
+  ylab("2022 ACP Participants") + xlab("State Population Growth Rate")
+
+###graph with outliers included
+grVacpParts_grf
+###graph without outliers
+grVacpParts_grf2
+
+cor.test(grVacpParts_clean$growth_rate, grVacpParts_clean$`2022.parts`)
+cor.test(grVacpParts_clean2$growth_rate, grVacpParts_clean2$`2022.parts`)
+```
+## State population density vs. (participants/households)
+```{r}
+densVprop_clean <- densVprop %>% #Data for State population density vs. the proportion of ACP participants to households(gives a look at dependents)
+  drop_na() %>%
+  mutate('fullHouse' = `2022.households`/`2022.parts`) %>%
+  arrange(density)
+
+densVprop_grf <- ggplot(densVprop_clean, aes(x=density, y=fullHouse)) +
+  geom_point() +
+  geom_smooth(method=glm, se=FALSE) +
+  ylab("2022 ACP Residents/House") + xlab("State Density")
+
+densVprop_grf
+cor.test(densVprop_clean$density, densVprop_clean$fullHouse)
+```
+## State population density vs. ACP growth rate
+```{r}
+#densVacpGrowth #Data for State population density vs. ACP growth rate
+
+densVacpGrowth_clean <- densVacpGrowth %>% #Data for State population density vs. the proportion of ACP participants to households(gives a look at dependents)
+  drop_na() %>%
+  arrange(density)
+
+##removing outliers
+densVacpGrowth_clean2 <- densVacpGrowth %>% #Data for State population density vs. the proportion of ACP participants to households(gives a look at dependents)
+  filter(Totals.State != 'New Hampshire' &
+           Totals.State != 'Pennsylvania') %>% 
+  drop_na() %>%
+  arrange(density)
+
+densVprop_grf <- ggplot(densVacpGrowth_clean, aes(x=density, y=participant_growthRate)) +
+  geom_point() +
+  geom_smooth(method=glm, se=FALSE) +
+  ylab("2022 ACP Growth Rate") + xlab("State Density")
+
+##outliers removed
+densVprop_grf2 <- ggplot(densVacpGrowth_clean2, aes(x=density, y=participant_growthRate)) +
+  geom_point() +
+  geom_smooth(method=glm, se=FALSE) +
+  ylab("2022 ACP Growth Rate") + xlab("State Density")
+
+densVprop_grf
+densVprop_grf2
+densVprop_clean
+cor.test(densVacpGrowth_clean$density, densVacpGrowth_clean$participant_growthRate)
+cor.test(densVacpGrowth_clean2$density, densVacpGrowth_clean2$participant_growthRate)
+```
+## ACP participants vs. ACP households
+```{r}
+#parts2house #Data for average dependents per household
+parts2house_clean <- parts2house %>% 
+  drop_na()
+
+parts2house_grf <- ggplot(parts2house_clean, aes(x=`2022.parts`, y=`2022.households`)) +
+  geom_point() +
+  geom_smooth(method=glm, se=FALSE) +
+  xlab("2022 ACP Participation") + ylab("2022 ACP Households")
+
+parts2house_grf2 <- ggplot(parts2house_clean, aes(x=`2022.parts`, y=`2022.households`)) +
+  geom_point() +
+  geom_smooth(method=loess, se=FALSE) +
+  xlab("2022 ACP Participation") + ylab("2022 ACP Households")
+
+
+parts2house_grf
+parts2house_grf2
+cor.test(parts2house_clean$`2022.parts`,parts2house_clean$`2022.households`)
+```
+
+
+
+
+

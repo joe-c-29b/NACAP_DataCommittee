@@ -73,10 +73,20 @@ popVpart2 <- popVpart %>%
   mutate(pop2 = population/100000)
 popVpart2
 
-popVpart_grf <- ggplot(popVpart2, aes(x=`2022.parts`, y=pop2)) +
+popVpart_grf <- ggplot(popVpart2, aes(y = `2022.parts`, x = pop2)) +
   geom_point() +
-  geom_smooth(method=lm, se=FALSE) +
-  ylab("2022 State Population (by 100,000)") + xlab("2022 Active ACP Participants")
+  geom_smooth(method = lm, se = FALSE, fullrange=TRUE) +
+  geom_abline(slope = 10,
+              intercept = 615.36,
+              color = "orange",
+              linewidth = 1) +
+  scale_x_continuous(limits=c(0, 450), expand = c(0, 0)) +
+  scale_y_continuous(limits=c(0, 6000), expand = c(0, 0)) +
+  xlab("2022 State Population (by 100,000)") + ylab("2022 Active ACP Participants") +
+  theme(panel.border = element_rect(color = 'black',
+                                    fill = NA,
+                                    linewidth = 2)) +
+  ggtitle('2022 Active Participants vs. State Population')
 
 popVpart_grf
 cor.test(popVpart2$`2022.parts`, popVpart2$pop2)
@@ -262,6 +272,56 @@ parts2house_grf2 <- ggplot(parts2house_clean, aes(x=`2022.parts`, y=`2022.househ
 parts2house_grf
 parts2house_grf2
 cor.test(parts2house_clean$`2022.parts`,parts2house_clean$`2022.households`)
+```
+```{r}
+brenda <- Figs %>% 
+  transmute('perCapita' = `population/participants`, 'State' = Totals.State) %>% 
+  drop_na() %>%
+  arrange(perCapita)
+brenda
+brend_grfz <- ggplot(brenda, aes(x=reorder(State, -perCapita), y=perCapita)) +
+  geom_col() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+brend_grfz
+```
+```{r}
+agg <- Figs %>% 
+  select(Totals.State, `2022.parts`, `2021.parts`, `2022.households`, `2021.households`, `2022.totals`, `2021.totals`) %>% 
+  drop_na()
+participants2022 <- mean(agg$`2022.parts`)
+participants2021 <- mean(agg$`2021.parts`)
+households2022 <- mean(agg$`2022.households`)
+households2021 <- mean(agg$`2021.households`)
+totals2022 <- mean(agg$`2022.totals`)
+totals2021 <- mean(agg$`2021.totals`)
+participants2022
+participants2021
+households2022
+households2021
+totals2022
+totals2021
+
+```
+```{r}
+avgs <- suppressMessages(read_csv('2022FigFrenz_clean_agg.csv'))
+```
+```{r}
+avgs_grf <- ggplot(avgs, aes(x = group, y = average, fill = (as.factor(year)))) +
+  geom_bar(width = 0.5, 
+           position = position_dodge(0.6), 
+           stat = 'identity', 
+           color = 'black') +
+  geom_text(aes(label = average), 
+            position = position_dodge(0.6), 
+            vjust = -0.3) +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.title = element_blank(),
+        panel.border = element_rect(color = 'black',
+                                    fill = NA,
+                                    linewidth = 1.5)) +
+  ggtitle('Program Averages') +
+  scale_x_discrete(labels = c('Participants','Households','Total Served'))
+avgs_grf
 ```
 
 

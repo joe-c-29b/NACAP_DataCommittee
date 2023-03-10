@@ -39,7 +39,7 @@ Figs <- figs %>% #complete set of the data
 Figs
 
 popVpart <- Figs %>% #Data for State population vs. ACP participation
-  select(Totals.State, '2022.parts', population, `population/participants`)
+  select(Totals.State, '2022.parts', population, `population/participants`, `growth rate`)
 
 growth_sqrd <- Figs %>% #Data for State growth rate vs. ACP participant growth rate
   select(Totals.State, `growth rate`, participant_growthRate) 
@@ -90,6 +90,7 @@ popVpart_grf <- ggplot(popVpart2, aes(y = `2022.parts`, x = pop2)) +
 ##if the axes are flipped then the abline equation becomes y=0.0311x+29.786
 popVpart_grf
 cor.test(popVpart2$`2022.parts`, popVpart2$pop2)
+mult_popVpart <- lm(`2022.parts` ~ pop2 + `growth rate`, data = popVpart2)
 ```
 ## State growth rate vs. ACP growth rate
 ```{r}

@@ -87,7 +87,7 @@ popVpart_grf <- ggplot(popVpart2, aes(y = `2022.parts`, x = pop2)) +
                                     fill = NA,
                                     linewidth = 2)) +
   ggtitle('2022 Active Participants vs. State Population')
-
+##if the axes are flipped then the abline equation becomes y=0.0311x+29.786
 popVpart_grf
 cor.test(popVpart2$`2022.parts`, popVpart2$pop2)
 ```

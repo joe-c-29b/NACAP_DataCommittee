@@ -21,9 +21,12 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 
 ## library
 ```{r} 
+install.packages('Hmisc')
 
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(Hmisc))
+
 
 getwd()
 setwd('C:/Users/Christian/OneDrive/Desktop/work from home/NACAP')
@@ -39,7 +42,7 @@ Figs <- figs %>% #complete set of the data
 Figs
 
 popVpart <- Figs %>% #Data for State population vs. ACP participation
-  select(Totals.State, '2022.parts', population, `population/participants`, `growth rate`)
+  select(Totals.State, start, '2022.parts', population, `population/participants`, `growth rate`, density, `2022.households`)
 
 growth_sqrd <- Figs %>% #Data for State growth rate vs. ACP participant growth rate
   select(Totals.State, `growth rate`, participant_growthRate) 
@@ -73,25 +76,27 @@ popVpart2 <- popVpart %>%
   mutate(pop2 = population/100000)
 popVpart2
 
-popVpart_grf <- ggplot(popVpart2, aes(y = `2022.parts`, x = pop2)) +
+popVpart_grf <- ggplot(popVpart2, aes(x = `2022.parts`, y = pop2)) +
   geom_point() +
   geom_smooth(method = lm, se = FALSE, fullrange=TRUE) +
-  geom_abline(slope = 10,
-              intercept = 615.36,
+  geom_abline(slope = .0312,
+              intercept = 29.325,
               color = "orange",
               linewidth = 1) +
-  scale_x_continuous(limits=c(0, 450), expand = c(0, 0)) +
-  scale_y_continuous(limits=c(0, 6000), expand = c(0, 0)) +
-  xlab("2022 State Population (by 100,000)") + ylab("2022 Active ACP Participants") +
+  scale_y_continuous(limits=c(0, 450), expand = c(0, 0)) +
+  scale_x_continuous(limits=c(0, 6000), expand = c(0, 0)) +
+  ylab("2022 State Population (by 100,000)") + xlab("2022 Active ACP Participants") +
   theme(panel.border = element_rect(color = 'black',
                                     fill = NA,
                                     linewidth = 2)) +
   ggtitle('2022 Active Participants vs. State Population')
-##if the axes are flipped then the abline equation becomes y=0.0311x+29.786
+
 popVpart_grf
-cor.test(popVpart2$`2022.parts`, popVpart2$pop2)
-mult_popVpart <- lm(`2022.parts` ~ pop2 + `growth rate`, data = popVpart2)
+
+
 ```
+
+
 ## State growth rate vs. ACP growth rate
 ```{r}
 growth_sqrd_clean <- growth_sqrd %>% #Data for State growth rate vs. ACP participant growth rate
@@ -196,15 +201,24 @@ grVacpParts_grf <- ggplot(grVacpParts_clean, aes(x=growth_rate, y=`2022.parts`))
 grVacpParts_grf2 <- ggplot(grVacpParts_clean2, aes(x=growth_rate, y=`2022.parts`)) +
   geom_point() +
   geom_smooth(method=glm, se=FALSE) +
-  ylab("2022 ACP Participants") + xlab("State Population Growth Rate")
+  ylab("2022 ACP Participants") + xlab("State Population Growth Rate")+
+  scale_y_continuous(limits=c(0, 6000), expand = c(0, 0)) +
+  scale_x_continuous(limits=c(0.002, .0128), expand = c(0, 0)) +
+  ylab("2022 State Growth Rate") + xlab("2022 Active ACP Participants") +
+  theme(panel.border = element_rect(color = 'black',
+                                    fill = NA,
+                                    linewidth = 2)) +
+  ggtitle('2022 Active Participants vs. State Population Growth Rate')
 
 ###graph with outliers included
 grVacpParts_grf
 ###graph without outliers
 grVacpParts_grf2
 
+that_mod <- lm(grVacpParts_clean2$growth_rate ~ grVacpParts_clean2$`2022.parts`)
 cor.test(grVacpParts_clean$growth_rate, grVacpParts_clean$`2022.parts`)
 cor.test(grVacpParts_clean2$growth_rate, grVacpParts_clean2$`2022.parts`)
+summary(that_mod)
 ```
 ## State population density vs. (participants/households)
 ```{r}
@@ -262,7 +276,13 @@ parts2house_clean <- parts2house %>%
 parts2house_grf <- ggplot(parts2house_clean, aes(x=`2022.parts`, y=`2022.households`)) +
   geom_point() +
   geom_smooth(method=glm, se=FALSE) +
-  xlab("2022 ACP Participation") + ylab("2022 ACP Households")
+  xlab("2022 ACP Participation") + ylab("2022 ACP Households") +
+  scale_y_continuous(limits=c(0, 4000), expand = c(0, 0)) +
+  scale_x_continuous(limits=c(0, 6000), expand = c(0, 0)) +
+  theme(panel.border = element_rect(color = 'black',
+                                    fill = NA,
+                                    linewidth = 2)) +
+  ggtitle('2022 ACP Participants vs. Households')
 
 parts2house_grf2 <- ggplot(parts2house_clean, aes(x=`2022.parts`, y=`2022.households`)) +
   geom_point() +
@@ -271,8 +291,10 @@ parts2house_grf2 <- ggplot(parts2house_clean, aes(x=`2022.parts`, y=`2022.househ
 
 
 parts2house_grf
-parts2house_grf2
-cor.test(parts2house_clean$`2022.parts`,parts2house_clean$`2022.households`)
+this_mod <- lm(`2022.households` ~ `2022.parts`, parts2house_clean)
+summary(this_mod)
+coef(this_mod)
+cor.test(parts2house_clean$`2022.parts`,parts2house_clean$`2022.households`, method = 'kendal')
 ```
 ```{r}
 brenda <- Figs %>% 

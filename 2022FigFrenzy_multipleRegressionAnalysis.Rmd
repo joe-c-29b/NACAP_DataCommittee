@@ -1,0 +1,122 @@
+---
+title: "NACAP multiple regression analysis"
+author: "Joseph Christian"
+date: "2023-03-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+##library
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(Hmisc))
+
+setwd('C:/Users/Christian/OneDrive/Desktop/work from home/NACAP')
+
+figs <- suppressMessages(read_csv('2022FigFrenz_clean.csv'))
+```
+
+##variables and cleaner df
+```{r}
+Figs <- figs %>% #complete set of the data
+  filter(Totals.State != 'Total')
+Figs
+
+popVpart <- Figs %>% #Data for State population vs. ACP participation
+  select(Totals.State, start, '2022.parts', population, `population/participants`, `growth rate`, density, `2022.households`)
+```
+
+
+## multiple regression stufs
+```{r}
+popVpart3 <- popVpart %>% 
+  arrange(`2022.parts`) %>%
+  filter(Totals.State != 'Texas' &
+           Totals.State != 'Virginia' &
+           Totals.State != 'Florida' &
+           Totals.State != 'Washington DC' &
+           Totals.State != 'Mississippi' &
+           Totals.State != 'New Jersey') %>%
+  mutate(pop2 = population/100000)
+
+window <- popVpart3 %>% 
+  transmute('parts' = `2022.parts`,  
+            'start2' = (2023 - as.numeric(start)), 
+            'growth' = `growth rate`,
+            'capita' = `population/participants`, 
+            'den' = density,
+            'hh' = `2022.households`,
+            pop2)
+cor(window)
+            
+
+cor(popVpart3)
+my_mod1 <- lm(parts ~ pop2, window)
+my_mod2 <- lm(parts ~ pop2 + growth, window)
+my_mod3 <- lm(parts ~ pop2 + growth + start2, window)
+my_mod4 <- lm(parts ~ pop2 + growth + start2 + den, window)
+
+
+coef(my_mod)
+summary(my_mod2)
+summary(my_mod3)
+AICmod1 <- AIC(my_mod1, k = 1)
+AICmod2 <- AIC(my_mod2, k = 2)
+AICmod3 <- AIC(my_mod3, k = 3)
+AICmod4 <- AIC(my_mod4, k = 4)
+AICmod5 <- AIC(my_mod5, k = 5)
+print(AICmod1)
+print(AICmod2)
+print(AICmod3)
+print(AICmod4)
+print(AICmod5)
+
+
+my_mod2 <- lm(parts ~ pop2 + capita, window)
+my_mod21 <- lm(parts ~ pop2 + start2, window)
+my_mod22 <- lm(parts ~ pop2 + growth, window)
+my_mod23 <- lm(parts ~ pop2 + start2, window)
+my_mod24 <- lm(parts ~ pop2 + den, window)
+
+AICmod2 <- AIC(my_mod2, k = 2)
+AICmod21 <- AIC(my_mod21, k = 2)
+AICmod22 <- AIC(my_mod22, k = 2)
+AICmod23 <- AIC(my_mod23, k = 2)
+AICmod24 <- AIC(my_mod24, k = 2)
+
+print(AICmod2)
+print(AICmod21)
+print(AICmod22)
+print(AICmod23)
+print(AICmod24)
+
+summary(my_mod1)
+summary(my_mod2)
+summary(my_mod3)
+summary(my_mod4)
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

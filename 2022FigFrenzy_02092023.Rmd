@@ -204,7 +204,7 @@ grVacpParts_grf2 <- ggplot(grVacpParts_clean2, aes(x=growth_rate, y=`2022.parts`
   ylab("2022 ACP Participants") + xlab("State Population Growth Rate")+
   scale_y_continuous(limits=c(0, 6000), expand = c(0, 0)) +
   scale_x_continuous(limits=c(0.002, .0128), expand = c(0, 0)) +
-  ylab("2022 State Growth Rate") + xlab("2022 Active ACP Participants") +
+  xlab("2022 State Growth Rate (%)") + ylab("2022 Active ACP Participants") +
   theme(panel.border = element_rect(color = 'black',
                                     fill = NA,
                                     linewidth = 2)) +
